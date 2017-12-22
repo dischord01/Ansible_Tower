@@ -1,0 +1,68 @@
+---
+#--------------------------------------------------
+# Install Tower
+#--------------------------------------------------
+- name: Download Latest Tower packge
+  become: yes
+  get_url: url=http://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest.tar.gz dest=/tmp/ansible-tower-setup-latest.tar.gz   validate_certs=false 
+  tags:
+    - tower_setup
+
+- name: Unarchive Tower Package
+  become: yes
+  unarchive: 
+    src: /tmp/ansible-tower-setup-latest.tar.gz 
+    dest: /tmp/
+    remote_src: yes    
+  tags:
+    - tower_setup
+
+- name: Remove download ansible-tower-setup-latest.tar.gz
+  become: yes
+  command: rm ansible-tower-setup-latest.tar.gz chdir=/tmp/
+  tags:
+    - tower_setup
+
+- name: Rename dir
+  become: yes
+  shell: mv ansible-tower-setup-* ansible-tower-setup chdir=/tmp/    
+  tags:
+    - tower_setup
+
+- name: Template over Ansible Inventory to setup
+  become: yes
+  template: dest=/tmp/ansible-tower-setup/inventory  src=inventory.j2
+  tags:
+    - tower_setup
+
+- name: Install Tower
+  become: yes
+  become_user: root
+  command: ./setup.sh chdir=/tmp/ansible-tower-setup  
+  tags:
+    - tower_setup
+#--------------------------------------------------
+# Install tower-cli
+#--------------------------------------------------
+- name: Install pip
+  become: yes
+  become_user: root
+  yum: name=python-pip  state=present
+  tags:
+    - tower_setup
+
+- name: Install tower-cli
+  become: yes
+  become_user: root
+  pip: name=ansible-tower-cli state=present
+  tags:
+    - tower_setup
+
+- name: Template over tower_cli.cfg
+  template:
+    dest:  "/etc/tower/tower_cli.cfg"
+    src:   tower_cli.cfg.j2  
+    owner: "root"
+    group: "awx"
+  tags:
+    - tower_setup

@@ -1,0 +1,54 @@
+---
+#--------------------------------------------------
+# Configure Demo Users
+#--------------------------------------------------
+- name: Create tower organization
+  tower_organization:
+    name:        "{{ item.org_name }}"
+    description: "{{ item.org_description }}"
+    state: present
+    tower_config_file: "/etc/tower/tower_cli.cfg"
+  with_items: "{{ organizations }}"
+  tags:
+    - user_setup
+  
+- name: Create tower team
+  tower_team:
+    name:         "{{ item.team_name }}"
+    description:  "{{ item.team_description }}"
+    organization: "{{ item.team_org_name }}"
+    state: present
+    tower_config_file: "/etc/tower/tower_cli.cfg"
+  with_items: "{{ teams }}"
+  tags:
+    - user_setup  
+
+- name: Add tower user
+  tower_user:
+    username:   "{{ item.username }}"
+    password:   "{{ item.password }}"
+    email:      "{{ item.email }}"
+    first_name: "{{ item.first_name }}"
+    last_name:  "{{ item.last_name }}"
+    superuser:  true
+    state: present
+    tower_config_file: "/etc/tower/tower_cli.cfg"
+  with_items: "{{ admin_users }}"
+  tags:
+    - user_setup 
+
+- name: Associate user with Team
+  become: yes
+  become_user: root
+  command: tower-cli team associate --user {{ item.username }} --team {{ item.team }}
+  with_items: "{{ users }}"
+  tags:
+    - user_setup     
+
+- name: Associate user with Organization
+  become: yes
+  become_user: root
+  command: tower-cli organization associate --user {{ item.username }} --organization {{ item.organization }}
+  with_items: "{{ users }}"
+  tags:
+    - user_setup 
